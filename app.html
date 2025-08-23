@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PiixOS Balance Shrine</title>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    input, button {
+      margin: 5px;
+      padding: 8px;
+      font-size: 1em;
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    #log {
+      margin-top: 20px;
+      max-width: 400px;
+      text-align: left;
+    }
+    .entry {
+      border-bottom: 1px dashed #555;
+      padding: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>💸 PiixOS Balance Shrine</h1>
+  <div id="balance">Loading...</div>
+  <input type="number" id="amount" placeholder="Amount">
+  <input type="text" id="reason" placeholder="Reason (optional)">
+  <button onclick="addMoney()">Add</button>
+  <button onclick="deleteMoney()">Delete</button>
+
+  <div id="log"><h2>🧾 Spend Log</h2></div>
+
+  <script>
+    const BALANCE_KEY = 'piixos_balance';
+    const LOG_KEY = 'piixos_spend_log';
+
+    function loadBalance() {
+      const stored = localStorage.getItem(BALANCE_KEY);
+      const balance = stored ? parseFloat(stored) : 0;
+      document.getElementById('balance').textContent = `Current Balance: $${balance.toFixed(2)}`;
+    }
+
+    function loadLog() {
+      const log = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML = '<h2>🧾 Spend Log</h2>';
+      log.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.textContent = `-$${entry.amount.toFixed(2)} | ${entry.reason || 'No reason'} | ${entry.time}`;
+        logDiv.appendChild(div);
+      });
+    }
+
+    function addMoney() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!isNaN(amount)) {
+        let current = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+        current += amount;
+        localStorage.setItem(BALANCE_KEY, current);
+        loadBalance();
+      }
+    }
+
+    function deleteMoney() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      const reason = document.getElementById('reason').value;
+      if (!isNaN(amount)) {
+        let current = parseFloat(localStorage.getItem(BALANCE_KEY)) || 0;
+        current -= amount;
+        if (current < 0) current = 0;
+        localStorage.setItem(BALANCE_KEY, current);
+
+        const log = JSON.parse(localStorage.getItem(LOG_KEY)) || [];
+        log.unshift({
+          amount,
+          reason,
+          time: new Date().toLocaleString()
+        });
+        localStorage.setItem(LOG_KEY, JSON.stringify(log));
+
+        loadBalance();
+        loadLog();
+      }
+    }
+
+    loadBalance();
+    loadLog();
+  </script>
+</body>
+</html>
